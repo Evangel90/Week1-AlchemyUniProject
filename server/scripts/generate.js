@@ -10,4 +10,6 @@ const publicKey = secp.getPublicKey(privateKey);
 
 console.log('PublicKey', toHex(publicKey));
 
+const walletAddress = toHex(keccak256(publicKey)).slice(-20);
 
+console.log('walletAddress', walletAddress);
