@@ -3,20 +3,49 @@ import server from "./server";
 import * as secp from "ethereum-cryptography/secp256k1";
 import { utf8ToBytes } from "ethereum-cryptography/utils";
 import { keccak256 } from "ethereum-cryptography/keccak";
+import { toHex } from "ethereum-cryptography/utils";
 
 function Transfer({ address, setBalance, privateKey }) {
   const [sendAmount, setSendAmount] = useState("");
   const [recipient, setRecipient] = useState("");
+  const [msgHash, setMsgHash] =useState("");
 
   const setValue = (setter) => (evt) => setter(evt.target.value);
+
+  async function setTxHash() {
+    try {
+      const {
+        data: { transactionCount },
+      } = await server.get(`transactionCount/${address}`);
+      const transactionObject = {
+        sender: address,
+        amount: parseInt(sendAmount),
+        recipient,
+        nonce: transactionCount + 1,
+      };
+      // const transactionString = ;
+      // setTransactionJSON(transactionString);
+      // const transactionU8 = ;
+      // const txHashU8 = ;
+      console.log(transactionObject.nonce)
+      const txHash = keccak256(utf8ToBytes(JSON.stringify(transactionObject)));
+
+      setMsgHash(txHash);
+    } catch (error) {
+      console.log(error);
+      alert(error);
+    }
+  }
 
   async function transfer(evt) {
     evt.preventDefault();
 
-    const msgHash = keccak256(utf8ToBytes(recipient + sendAmount));
-    const [signature, recoveryBit] = await secp.sign(msgHash, privateKey, {recovered: true} );
-    // const recoveryBit = secp.recoverPublicKey(msgHash, signature).recovery;
+    // setnonce(nonce += 1);
+    // console.log(nonce);
 
+    // const msgHash = keccak256(utf8ToBytes(recipient + sendAmount));
+    const signs = await secp.sign(msgHash, privateKey, {recovered: true} );
+    const [signature, recoveryBit] = signs;
 
     try {
       const {
@@ -29,6 +58,7 @@ function Transfer({ address, setBalance, privateKey }) {
         recoveryBit
       });
       setBalance(balance);
+      console.log(toHex(signature).slice(-20));
     } catch (ex) {
       alert(ex.response.data.message);
     }
@@ -56,7 +86,7 @@ function Transfer({ address, setBalance, privateKey }) {
         ></input>
       </label>
 
-      <input type="submit" className="button" value="Transfer" />
+      <input type="submit" className="button" value="Transfer" onClick={setTxHash}/>
     </form>
   );
 }

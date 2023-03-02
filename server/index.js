@@ -16,10 +16,22 @@ const balances = {
   "d99d0c64dad36c12c7d4": 75, //b38f27601a5502a81ad8a49cf92b080613982f73d78fba83b1e4898c8e6f0078
 };
 
+const transactionCount = {
+  "7fbe2b8ec715347e01c8": 0,
+  "bb8aa5446464b23b9dd9": 0,
+  "d99d0c64dad36c12c7d4": 0,
+};
+
 app.get("/balance/:address", (req, res) => {
   const { address } = req.params;
   const balance = balances[address] || 0;
   res.send({ balance });
+});
+
+app.get("/transactionCount/:sender", (req, res) => {
+  const { sender } = req.params;
+  setInitialTransactionCount(sender);
+  res.send({ transactionCount: transactionCount[sender] });
 });
 
 app.post("/send", async(req, res) => {
@@ -52,6 +64,7 @@ app.post("/send", async(req, res) => {
   }else if(recipient && amount) {
     balances[sender] -= amount;
     balances[recipient] += amount;
+    transactionCount[sender]++;
     res.send({ balance: balances[sender] });
   }
 });
@@ -59,6 +72,12 @@ app.post("/send", async(req, res) => {
 app.listen(port, () => {
   console.log(`Listening on port ${port}!`);
 });
+
+function setInitialTransactionCount(address) {
+  if (!transactionCount[address]) {
+    transactionCount[address] = 0;
+  }
+}
 
 function setInitialBalance(address) {
   if (!balances[address]) {
